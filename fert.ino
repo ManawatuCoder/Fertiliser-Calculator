@@ -23,17 +23,18 @@ class Menu {
   int menuNum;
   long IR;
   float liter;
+  bool sensorOn;
   int key; // 409 = left, 0023 = right, 972 = up, 254 = down, 639 = select
 
   int keyPress(){
     key = analogRead (0);
     if (key < 450 && key > 400){ // move left
       menuNum--;
-      delay(200);
+      delay(250);
     }
-    if (key < 100 && key >=0){ // move right
+    if (key < 50 && key >=0){ // move right
       menuNum++;
-      delay(200);
+      delay(250);
     }
   }
 
@@ -44,6 +45,8 @@ void setup() {
   menuNum = 0;
   int key; // 409 = left, 0023 = right, 972 = up, 254 = down, 6393 = select.
   key = analogRead (0);
+  IR = 0;
+  sensorOn = false;
 
   Menu Menu1;
     Menu1.one = 25;
@@ -70,13 +73,23 @@ void loop() {
   int pk = 15;
   bool pause = false;
 
-  //Find average of 100 readings from distance sensor (as it fluctuates, a small amount, rapidly)
-  IR = 0;
-  for(int i = 0; i < 25; i++){
-    IR = IR + analogRead(A1);
-    delay(10);
+  if (key < 150 && key > 50){  //   Switches sensor readings to constantly update, or only update when 'down' is pressed
+    if(sensorOn==false){
+      sensorOn = true;
+    }
+    else{
+      sensorOn = false;
+    }
+    delay(500);
   }
-  IR = IR / 25;
+
+  if(sensorOn == true){
+    for(int i = 0; i < 25; i++){ // Get average reading of IR
+      IR = IR + analogRead(A1);
+      delay(10);
+    }
+    IR = IR / 25;
+  }
 
  //Convert IR value to liters
   float x = IR;
@@ -93,6 +106,9 @@ void loop() {
   }
   if(IR > 432){
     liter = 0.142045*x+1.13636;
+  }
+  if( IR == 0){
+    liter = 0;
   }
   liters = 100 - liter;
 
@@ -166,7 +182,7 @@ void loop() {
   
   keyPress();
   
-  if (key < 700 && key > 600){ // Display IR sensor value and number of liters needed to fill
+  if (key < 700 && key > 600){ // Display IR sensor value and number of liters needed to fill on SELECT press
     lcd.print(IR);
     lcd.print(" ");
     lcd.print(liters);
@@ -176,16 +192,25 @@ void loop() {
   if (key < 350 && key > 150){ // Pressing down key pauses screen
     while(pause == false){
       pause = true;
-      delay(500);
+      delay(100);
     }
   }
   //unpause when down is pressed again
+  //and define what happens while pause is true
   while(pause == true){
     key = analogRead(0);
-    delay(100);
-    if (key < 350 && key > 200){
-      pause = false;
+
+    for(int i = 0; i < 25; i++){ // Get average reading of IR
+      IR = IR + analogRead(A1);
+      delay(10);
     }
+    IR = IR / 25;
+
+    delay(100);
+
+    //if (key < 350 && key > 200){ //unpause
+      pause = false;
+    //}
   }
 
 
